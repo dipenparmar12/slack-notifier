@@ -1,0 +1,12 @@
+slack_notifier/
+├── LICENSE
+├── README.md
+├── pyproject.toml
+├── setup.cfg
+├── src/
+│   └── slack_notifier/
+│       ├── __init__.py
+│       └── notifier.py
+└── tests/
+    ├── __init__.py
+    └── test_notifier.py

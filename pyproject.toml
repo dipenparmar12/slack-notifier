@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "slack-notifier"
+version = "0.1.0"
+description = "A flexible Slack notification system with logging capabilities"
+readme = "README.md"
+authors = [{ name = "Dipen parmar", email = "dipensavji@gmail.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+keywords = ["slack", "notifications", "logging"]
+dependencies = [
+    "requests>=2.24.0",
+]
+requires-python = ">=3.7"
+
+[project.urls]
+Homepage = "https://github.com/dipenparmar12/py-slack-notifier"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.uv.workspace]
+members = ["venv_slack_noti"]
