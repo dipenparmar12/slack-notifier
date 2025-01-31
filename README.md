@@ -84,3 +84,80 @@ requests==2.31.0
 -e file:///Users/dipen/projects/_projects/slack-notifier
 urllib3==2.0.7
 ```
+
+
+## slack notifier message
+
+```bash
+curl --location 'YOUR_WEBHOOK_URL' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "blocks": [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Hello from curl"
+            }
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": "*{key}:*\n{value}"
+                }
+            ]
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "This is a section block with some *markdown* text."
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": "This is a header block"
+            }
+        },
+        {
+            "type": "input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "plain_text_input-action"
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Label"
+            }
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": "*Priority*"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*High*"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*Assignee*"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": "*@username*"
+                }
+            ]
+        }
+    ]
+}'
+```
