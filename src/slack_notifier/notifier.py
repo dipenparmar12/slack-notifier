@@ -1,3 +1,4 @@
+# src/slack_notifier/notifier.py
 import os
 import logging
 import socket
@@ -104,8 +105,11 @@ class SlackNotifier:
             full_message.append(f"=== {title} ===")
 
         full_message.append(
-            f"[{self.system_name}] {level.value} {level.name}: {message}"
+            f"{level.value} {level.name}: {message}"
         )
+        # full_message.append(
+        #     f"[{self.system_name}] {level.value} {level.name}: {message}"
+        # )
 
         fields_str = self._format_fields_for_logging(fields)
         if fields_str:
@@ -126,7 +130,6 @@ class SlackNotifier:
             self.notification_logger.debug(complete_message)
         else:  # SUCCESS and INFO go to info channel
             self.notification_logger.info(complete_message)
-
     def _create_message_blocks(
         self,
         level: NotificationLevel,
@@ -145,19 +148,20 @@ class SlackNotifier:
                     "type": "header",
                     "text": {
                         "type": "plain_text",
-                        "text": f"[{self.system_name}] {title}",
+                        "text": f"{title}",
                     },
                 }
             )
         else:
-            # Add system name as header if no title provided
-            blocks.append(
-                {
-                    "type": "header",
-                    "text": {"type": "plain_text", "text": f"[{self.system_name}]"},
-                }
-            )
-
+            pass
+            # # Add system name as header if no title provided
+            # blocks.append(
+            #     {
+            #         "type": "header",
+            #         "text": {"type": "plain_text", "text": f"[{self.system_name}]"},
+            #     }
+            # )
+            
         # Add main message block
         blocks.append(
             {
@@ -171,9 +175,6 @@ class SlackNotifier:
 
         # Add fields if provided
         if fields:
-            # Add system info to fields
-            fields = {"System": self.system_name, **fields}
-
             # Handle nested dictionaries in fields
             formatted_fields = []
             for key, value in fields.items():
@@ -209,34 +210,34 @@ class SlackNotifier:
                             },
                         }
                     )
-        else:
-            # handle `fields_code_block` string data type
-            try:
-                if isinstance(fields_code_block, str):
-                    fields_code_block = json.loads(fields_code_block)
-                    for key, value in fields_code_block.items():
-                        blocks.append(
-                            {
-                                "type": "section",
-                                "text": {
-                                    "type": "mrkdwn",
-                                    "text": f"*{key}:*\n```{value}```",
-                                },
-                            }
-                        )
-            except json.JSONDecodeError:
-                # If not valid JSON, treat as regular string
-                blocks.append(
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"```{fields_code_block}```",
-                        },
-                    }
-                )
+            else:
+                # handle `fields_code_block` string data type
+                try:
+                    if isinstance(fields_code_block, str):
+                        fields_code_block = json.loads(fields_code_block)
+                        for key, value in fields_code_block.items():
+                            blocks.append(
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": f"*{key}:*\n```{value}```",
+                                    },
+                                }
+                            )
+                except json.JSONDecodeError:
+                    # If not valid JSON, treat as regular string
+                    blocks.append(
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"```{fields_code_block}```",
+                            },
+                        }
+                    )
 
-        # Add timestamp and system context
+        # Add timestamp and system context in footer
         blocks.append(
             {
                 "type": "context",
@@ -250,7 +251,7 @@ class SlackNotifier:
         )
 
         return blocks
-
+    
     def _format_fields_for_logging(
         self, fields: Optional[Dict[str, Any]] = None
     ) -> str:

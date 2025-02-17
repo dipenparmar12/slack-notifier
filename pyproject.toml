@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py-slack-notifier"
-version = "0.1.0"
+version = "0.1.1"
 description = "A flexible Slack notification system with logging capabilities"
 readme = "README.md"
 authors = [{ name = "Dipen parmar", email = "dipensavji@gmail.com" }]
