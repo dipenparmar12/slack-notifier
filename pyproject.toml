@@ -3,7 +3,7 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "slack-notifier"
+name = "py-slack-notifier"
 version = "0.1.0"
 description = "A flexible Slack notification system with logging capabilities"
 readme = "README.md"

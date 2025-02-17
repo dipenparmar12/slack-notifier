@@ -5,7 +5,7 @@ A flexible Slack notification system with logging capabilities. This package pro
 ## Installation
 
 ```bash
-pip install slack-notifier
+pip install py-slack-notifier
 ```
 
 ## Features
