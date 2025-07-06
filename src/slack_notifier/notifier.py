@@ -34,6 +34,35 @@ class SlackNotifier:
         webhook_url="your_webhook_url",
         system_name="MyService"  # Optional - will use hostname if not provided
     )
+
+    # Send a simple notification
+    notifier.send_info("Process started")
+
+    # Send a notification with fields
+    notifier.send_success(
+        message="Process completed",
+        title="Batch Processing",
+        fields={
+            "Files Processed": "100",
+            "Success Rate": "98%"
+        }
+    )
+
+    # Send a notification with code blocks
+    notifier.send_error(
+        message="Error in processing",
+        fields_code_block={
+            "Stack Trace": "Error: File not found\n  at line 42"
+        }
+    )
+
+    # Track progress
+    notifier = SlackNotifier(
+        webhook_url="your_webhook_url",
+        total_files=100,
+        system_name="MyService"
+    )
+
     """
 
     def __init__(
