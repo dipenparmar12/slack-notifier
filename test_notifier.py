@@ -12,7 +12,8 @@ from pathlib import Path
 # Add the package to Python path for testing
 sys.path.insert(0, str(Path(__file__).parent))
 
-from enhanced_slack_notifier import SlackNotifier, create_multi_channel_notifier
+from __init__ import SlackNotifier, create_multi_channel_notifier
+
 
 def test_multi_channel_notifications():
     """Test multi-channel notification capabilities"""
