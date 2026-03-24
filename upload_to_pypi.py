@@ -127,25 +127,26 @@ def show_installation_instructions():
     print("   pip install py-slack-notifier")
     print("\n🚀 Quick start usage:")
     print("""
-from enhanced_slack_notifier import SlackNotifier
+from slack_notifier import SlackNotifier
 
 # Single channel setup
 notifier = SlackNotifier(
-    default_webhook_url="your_webhook_url",
+    webhook_url="your_webhook_url",
     system_name="Your System"
 )
 
 # Multi-channel setup
-channels = {
-    "alerts": "webhook_url_1",
-    "logs": "webhook_url_2"
-}
-notifier = SlackNotifier(channels=channels)
+notifier = SlackNotifier(
+    channels={
+        "alerts": "webhook_url_1",
+        "logs": "webhook_url_2",
+    }
+)
 
 # Send notifications
 notifier.send_success("Operation completed!")
 notifier.send_error("Something went wrong!")
-notifier.send_info("Status update", channel="logs")
+notifier.send_info("Status update", channels=["logs"])
 """)
     print("=" * 60)
 
