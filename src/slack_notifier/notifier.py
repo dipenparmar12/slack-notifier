@@ -10,6 +10,7 @@ from typing import Any, List, Optional, Dict
 
 import requests
 
+
 class NotificationLogHandler(logging.FileHandler):
     """Custom handler for notification logs with special formatting"""
 
@@ -148,9 +149,7 @@ class SlackNotifier:
         if title:
             full_message.append(f"=== {title} ===")
 
-        full_message.append(
-            f"{level.value} {level.name}: {message}"
-        )
+        full_message.append(f"{level.value} {level.name}: {message}")
         # full_message.append(
         #     f"[{self.system_name}] {level.value} {level.name}: {message}"
         # )
@@ -174,6 +173,7 @@ class SlackNotifier:
             self.notification_logger.debug(complete_message)
         else:  # SUCCESS and INFO go to info channel
             self.notification_logger.info(complete_message)
+
     def _create_message_blocks(
         self,
         level: NotificationLevel,
@@ -205,7 +205,7 @@ class SlackNotifier:
             #         "text": {"type": "plain_text", "text": f"[{self.system_name}]"},
             #     }
             # )
-            
+
         # Add main message block
         blocks.append(
             {
@@ -295,7 +295,7 @@ class SlackNotifier:
         )
 
         return blocks
-    
+
     def _format_fields_for_logging(
         self, fields: Optional[Dict[str, Any]] = None
     ) -> str:
@@ -340,7 +340,9 @@ class SlackNotifier:
 
         return "\n" + "\n".join(formatted)
 
-    def _send_to_slack(self, blocks: List[Dict], webhook_url: Optional[str] = None) -> requests.Response:
+    def _send_to_slack(
+        self, blocks: List[Dict], webhook_url: Optional[str] = None
+    ) -> requests.Response:
         """Send formatted message blocks to Slack webhook.
 
         Args:
@@ -481,7 +483,12 @@ class SlackNotifier:
         channels: Optional[List[str]] = None,
     ) -> bool:
         return self.send_notification(
-            NotificationLevel.SUCCESS, message, title, fields, fields_code_block, channels
+            NotificationLevel.SUCCESS,
+            message,
+            title,
+            fields,
+            fields_code_block,
+            channels,
         )
 
     def send_warning(
@@ -493,7 +500,12 @@ class SlackNotifier:
         channels: Optional[List[str]] = None,
     ) -> bool:
         return self.send_notification(
-            NotificationLevel.WARNING, message, title, fields, fields_code_block, channels
+            NotificationLevel.WARNING,
+            message,
+            title,
+            fields,
+            fields_code_block,
+            channels,
         )
 
     def send_error(
