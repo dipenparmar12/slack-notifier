@@ -101,19 +101,19 @@ def upload_to_pypi(test=True):
     return True
 
 def verify_package():
-    """Verify package metadata"""
+    """Verify package metadata using twine check"""
     print("🔍 Verifying package...")
-    
-    # Check if setup.py is valid
-    result = subprocess.run([
-        sys.executable, 'setup.py', 'check'
-    ], capture_output=True, text=True)
-    
+
+    result = subprocess.run(
+        f'{sys.executable} -m twine check dist/*',
+        capture_output=True, text=True, shell=True
+    )
+
     if result.returncode != 0:
         print(f"❌ Package verification failed:")
-        print(result.stderr)
+        print(result.stderr or result.stdout)
         return False
-    
+
     print("✅ Package verification passed")
     return True
 
@@ -165,12 +165,12 @@ def main():
     # Step 2: Clean build artifacts
     clean_build_artifacts()
     
-    # Step 3: Verify package
-    if not verify_package():
+    # Step 3: Build package
+    if not build_package():
         return 1
     
-    # Step 4: Build package
-    if not build_package():
+    # Step 4: Verify package
+    if not verify_package():
         return 1
     
     # Step 5: Upload to PyPI
