@@ -11,6 +11,7 @@ pip install py-slack-notifier
 ## Features
 
 - Multiple notification levels (SUCCESS, WARNING, ERROR, INFO, DEBUG)
+- **Multi-channel support** — send to multiple Slack channels in one call
 - Progress tracking with automatic notifications
 - Fallback to logging when Slack webhook is not available
 - Support for formatted messages with fields and code blocks
@@ -62,11 +63,48 @@ for file in files:
     notifier.send_progress_notification(success=success)
 ```
 
+### Multi-Channel Notifications
+
+Send notifications to multiple Slack channels by providing a channels dictionary:
+
+```python
+from slack_notifier import SlackNotifier
+
+# Initialize with multiple channels
+notifier = SlackNotifier(
+    channels={
+        "alerts": "https://hooks.slack.com/services/ALERTS_WEBHOOK",
+        "deploys": "https://hooks.slack.com/services/DEPLOYS_WEBHOOK",
+        "general": "https://hooks.slack.com/services/GENERAL_WEBHOOK",
+    },
+    system_name="MyService"
+)
+
+# Send to all configured channels
+notifier.send_info("System maintenance starting")
+
+# Send to specific channels only
+notifier.send_error(
+    message="Deploy failed",
+    channels=["alerts", "deploys"]
+)
+
+# Send to a single channel
+notifier.send_success("Deploy complete", channels=["deploys"])
+```
+
+Channels can also be configured via the `PY_SLACK_NOTIFI` environment variable as a JSON string:
+
+```bash
+export PY_SLACK_NOTIFI='{"alerts": "https://hooks.slack.com/services/ALERTS", "general": "https://hooks.slack.com/services/GENERAL"}'
+```
+
 ## Configuration
 
 The notifier can be configured using environment variables:
 
-- `SLACK_WEBHOOK_URL`: Default webhook URL
+- `SLACK_WEBHOOK_URL`: Default webhook URL (single channel)
+- `PY_SLACK_NOTIFI`: JSON string mapping channel names to webhook URLs (multi-channel)
 - `SYSTEM_NAME`: Default system name
 - `NOTIFICATION_PERCENTAGES`: Comma-separated list of progress percentages to trigger notifications (default: "20,100")
 
