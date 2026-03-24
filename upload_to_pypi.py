@@ -25,7 +25,11 @@ def check_requirements():
         print(f"❌ Missing required tools: {', '.join(missing_tools)}")
         print("Installing missing tools...")
         for tool in missing_tools:
-            subprocess.run([sys.executable, '-m', 'pip', 'install', tool], check=True)
+            try:
+                subprocess.run([sys.executable, '-m', 'pip', 'install', tool], check=True)
+            except subprocess.CalledProcessError:
+                # Fallback to uv if pip is not available
+                subprocess.run(['uv', 'pip', 'install', tool], check=True)
         print("✅ Required tools installed")
     else:
         print("✅ All required tools are available")
