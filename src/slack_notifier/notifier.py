@@ -10,6 +10,7 @@ from typing import Any, List, Optional, Dict
 
 import requests
 
+
 class NotificationLogHandler(logging.FileHandler):
     """Custom handler for notification logs with special formatting"""
 
@@ -72,6 +73,7 @@ class SlackNotifier:
         total_files=0,
         start_time=datetime.now(),
         system_name: str = None,
+        channels: Optional[Dict[str, str]] = None,
     ):
         """
         Initialize the Slack notifier with webhook URL and dedicated notification log.
@@ -80,15 +82,29 @@ class SlackNotifier:
             notification_log_path: Path to the notification log file
             webhook_url: Slack webhook URL. If not provided, will try to get from environment variable
             system_name: Name of the system sending notifications. If not provided, will try to get from environment variable
+            channels: Dict mapping channel names to webhook URLs. If not provided, will try PY_SLACK_NOTIFI env var (JSON).
         """
         self.webhook_url = webhook_url or os.getenv("SLACK_WEBHOOK_URL")
-        self.use_logging = not bool(self.webhook_url)
         self.system_name = system_name or os.getenv("SYSTEM_NAME", socket.gethostname())
+
+        # Build channels dict: explicit param > env var > empty
+        if channels:
+            self.channels = dict(channels)
+        else:
+            env_channels = os.getenv("PY_SLACK_NOTIFI")
+            if env_channels:
+                self.channels = json.loads(env_channels)
+            else:
+                self.channels = {}
+
+        # Add webhook_url as "default" channel if provided and not already in channels
+        if self.webhook_url and "default" not in self.channels:
+            self.channels["default"] = self.webhook_url
+
+        self.use_logging = not bool(self.webhook_url) and not bool(self.channels)
 
         # Set default notification log path if not provided
         self.notification_log_path = notification_log_path or "notifications.log"
-        self.webhook_url = webhook_url or os.getenv("SLACK_WEBHOOK_URL")
-        self.use_logging = not bool(self.webhook_url)
 
         # Create notification logger
         self.notification_logger = logging.getLogger("notifications")
@@ -133,9 +149,7 @@ class SlackNotifier:
         if title:
             full_message.append(f"=== {title} ===")
 
-        full_message.append(
-            f"{level.value} {level.name}: {message}"
-        )
+        full_message.append(f"{level.value} {level.name}: {message}")
         # full_message.append(
         #     f"[{self.system_name}] {level.value} {level.name}: {message}"
         # )
@@ -159,6 +173,7 @@ class SlackNotifier:
             self.notification_logger.debug(complete_message)
         else:  # SUCCESS and INFO go to info channel
             self.notification_logger.info(complete_message)
+
     def _create_message_blocks(
         self,
         level: NotificationLevel,
@@ -190,7 +205,7 @@ class SlackNotifier:
             #         "text": {"type": "plain_text", "text": f"[{self.system_name}]"},
             #     }
             # )
-            
+
         # Add main message block
         blocks.append(
             {
@@ -280,7 +295,7 @@ class SlackNotifier:
         )
 
         return blocks
-    
+
     def _format_fields_for_logging(
         self, fields: Optional[Dict[str, Any]] = None
     ) -> str:
@@ -325,11 +340,14 @@ class SlackNotifier:
 
         return "\n" + "\n".join(formatted)
 
-    def _send_to_slack(self, blocks: List[Dict]) -> requests.Response:
+    def _send_to_slack(
+        self, blocks: List[Dict], webhook_url: Optional[str] = None
+    ) -> requests.Response:
         """Send formatted message blocks to Slack webhook.
 
         Args:
             blocks: List of formatted Slack message blocks
+            webhook_url: Webhook URL to send to. Defaults to self.webhook_url.
 
         Returns:
             requests.Response: Response from Slack API
@@ -337,8 +355,9 @@ class SlackNotifier:
         Raises:
             requests.exceptions.RequestException: If the request fails
         """
+        url = webhook_url or self.webhook_url
         return requests.post(
-            self.webhook_url,
+            url,
             json={"blocks": blocks},
             headers={"Content-Type": "application/json"},
         )
@@ -350,6 +369,7 @@ class SlackNotifier:
         title: Optional[str] = None,
         fields: Optional[Dict[str, Any]] = None,
         fields_code_block: Optional[Dict[str, str]] = None,
+        channels: Optional[List[str]] = None,
     ) -> bool:
         """Send a notification to Slack.
 
@@ -359,9 +379,10 @@ class SlackNotifier:
             title: Optional title for the notification
             fields: Optional dictionary of additional fields
             fields_code_block: Optional dictionary of code block fields
+            channels: Optional list of channel names to send to. Sends to all configured channels if not specified.
 
         Returns:
-            bool: True if notification was sent successfully, False otherwise
+            bool: True if all notifications were sent successfully, False otherwise
         """
         try:
             if self.use_logging:
@@ -373,12 +394,29 @@ class SlackNotifier:
                 level, message, title, fields, fields_code_block
             )
 
-            # Send to Slack
-            response = self._send_to_slack(blocks)
+            # Resolve target webhook URLs
+            if channels:
+                target_urls = [
+                    self.channels[ch] for ch in channels if ch in self.channels
+                ]
+            elif self.channels:
+                target_urls = list(self.channels.values())
+            elif self.webhook_url:
+                target_urls = [self.webhook_url]
+            else:
+                self._log_notification(level, message, title, fields, fields_code_block)
+                return True
 
-            # Check response
-            response.raise_for_status()
-            return True
+            all_ok = True
+            for url in target_urls:
+                try:
+                    response = self._send_to_slack(blocks, webhook_url=url)
+                    response.raise_for_status()
+                except Exception as e:
+                    logging.error(f"Failed to send notification to {url}: {str(e)}")
+                    all_ok = False
+
+            return all_ok
 
         except Exception as e:
             error_msg = f"Failed to send notification: {str(e)}"
@@ -442,9 +480,15 @@ class SlackNotifier:
         title: Optional[str] = None,
         fields: Optional[Dict[str, Any]] = None,
         fields_code_block: Optional[Dict[str, str]] = None,
+        channels: Optional[List[str]] = None,
     ) -> bool:
         return self.send_notification(
-            NotificationLevel.SUCCESS, message, title, fields, fields_code_block
+            NotificationLevel.SUCCESS,
+            message,
+            title,
+            fields,
+            fields_code_block,
+            channels,
         )
 
     def send_warning(
@@ -453,9 +497,15 @@ class SlackNotifier:
         title: Optional[str] = None,
         fields: Optional[Dict[str, Any]] = None,
         fields_code_block: Optional[Dict[str, str]] = None,
+        channels: Optional[List[str]] = None,
     ) -> bool:
         return self.send_notification(
-            NotificationLevel.WARNING, message, title, fields, fields_code_block
+            NotificationLevel.WARNING,
+            message,
+            title,
+            fields,
+            fields_code_block,
+            channels,
         )
 
     def send_error(
@@ -464,9 +514,10 @@ class SlackNotifier:
         title: Optional[str] = None,
         fields: Optional[Dict[str, Any]] = None,
         fields_code_block: Optional[Dict[str, str]] = None,
+        channels: Optional[List[str]] = None,
     ) -> bool:
         return self.send_notification(
-            NotificationLevel.ERROR, message, title, fields, fields_code_block
+            NotificationLevel.ERROR, message, title, fields, fields_code_block, channels
         )
 
     def send_info(
@@ -475,9 +526,10 @@ class SlackNotifier:
         title: Optional[str] = None,
         fields: Optional[Dict[str, Any]] = None,
         fields_code_block: Optional[Dict[str, str]] = None,
+        channels: Optional[List[str]] = None,
     ) -> bool:
         return self.send_notification(
-            NotificationLevel.INFO, message, title, fields, fields_code_block
+            NotificationLevel.INFO, message, title, fields, fields_code_block, channels
         )
 
     def send_debug(
@@ -486,7 +538,8 @@ class SlackNotifier:
         title: Optional[str] = None,
         fields: Optional[Dict[str, Any]] = None,
         fields_code_block: Optional[Dict[str, str]] = None,
+        channels: Optional[List[str]] = None,
     ) -> bool:
         return self.send_notification(
-            NotificationLevel.DEBUG, message, title, fields, fields_code_block
+            NotificationLevel.DEBUG, message, title, fields, fields_code_block, channels
         )
